@@ -9,7 +9,7 @@ const validateProductName = (name) => {
 };
 
 const validateProductPrice = (price) => {
-  return typeof price === "string" && price.trim().length > 0; // Ensure price is non-empty
+  return typeof price === "string" && price.trim().length > 0;
 };
 
 module.exports = {

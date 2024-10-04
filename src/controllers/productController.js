@@ -3,6 +3,7 @@ const {
   validateProductName,
   validateProductPrice,
 } = require("../utils/validators");
+const convertMDLToEUR = require("./exchangeEUR");
 
 exports.scrapeTopShop = async (req, res) => {
   try {
@@ -41,7 +42,33 @@ exports.scrapeTopShop = async (req, res) => {
         validateProductName(product.name) && validateProductPrice(product.price)
     );
 
-    res.json(validProducts);
+    const productsWithEURPrices = await Promise.all(
+      validProducts.map(async (product) => {
+        const priceInEUR = await convertMDLToEUR(product.price);
+        return { ...product, priceInEUR };
+      })
+    );
+
+    const minPrice = 50;
+    const maxPrice = 200;
+
+    const filteredProducts = productsWithEURPrices.filter(
+      (product) =>
+        product.priceInEUR >= minPrice && product.priceInEUR <= maxPrice
+    );
+
+    const totalPrice = filteredProducts.reduce(
+      (sum, product) => sum + product.priceInEUR,
+      0
+    );
+
+    const result = {
+      timestamp: new Date().toISOString(),
+      filteredProducts,
+      totalPrice,
+    };
+
+    res.json(result);
   } catch (error) {
     console.error("Error occurred while scraping:", error);
     res.status(500).json({ message: "Error occurred while scraping", error });
