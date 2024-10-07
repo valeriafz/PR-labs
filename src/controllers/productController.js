@@ -18,19 +18,20 @@ exports.scrapeTopShop = async (req, res) => {
 
     $(".item").each((index, element) => {
       const name = $(element).find(".product-name").text().trim();
-      const price = $(element).find(".special-price").text().trim();
+      let price = $(element)
+        .find(".special-price")
+        .text()
+        .trim()
+        .replace(/[^\d,]/g, "");
       const link = $(element).find("a").attr("href");
 
-      products.push({ name, price, link });
+      if (validateProductName(name) && validateProductPrice(price)) {
+        products.push({ name, price, link });
+      }
     });
 
-    const validProducts = products.filter(
-      (product) =>
-        validateProductName(product.name) && validateProductPrice(product.price)
-    );
-
     const productsWithEURPrices = await Promise.all(
-      validProducts.map(async (product) => {
+      products.map(async (product) => {
         const priceInEUR = await convertMDLToEUR(product.price);
         return { ...product, priceInEUR };
       })
@@ -52,7 +53,7 @@ exports.scrapeTopShop = async (req, res) => {
     const result = {
       timestamp: new Date().toISOString(),
       filteredProducts,
-      totalPrice,
+      totalPrice: parseFloat(totalPrice.toFixed(2)),
     };
 
     res.json(result);

@@ -15,7 +15,10 @@ const getExchangeRate = async () => {
 const convertMDLToEUR = async (mdlPrice) => {
   const conversionRate = await getExchangeRate();
   const priceNumber = parseFloat(mdlPrice.replace(".", "").replace(",", "."));
-  return priceNumber * conversionRate;
+
+  const priceInEUR = priceNumber * conversionRate;
+
+  return parseFloat(priceInEUR.toFixed(2));
 };
 
 module.exports = convertMDLToEUR;
