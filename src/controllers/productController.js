@@ -1,41 +1,28 @@
-const puppeteer = require("puppeteer");
+const cheerio = require("cheerio");
 const {
   validateProductName,
   validateProductPrice,
 } = require("../utils/validators");
 const convertMDLToEUR = require("./exchangeEUR");
+const { fetchHtmlUsingTcpSocket } = require("../services/httpService");
 
 exports.scrapeTopShop = async (req, res) => {
   try {
-    const browser = await puppeteer.launch({ headless: true });
-    const page = await browser.newPage();
+    const hostname = "www.top-shop.md";
+    const path = "/oferte-speciale";
 
-    await page.goto("https://www.top-shop.md/oferte-speciale", {
-      waitUntil: "domcontentloaded",
+    const html = await fetchHtmlUsingTcpSocket(hostname, path);
+
+    const $ = cheerio.load(html);
+    const products = [];
+
+    $(".item").each((index, element) => {
+      const name = $(element).find(".product-name").text().trim();
+      const price = $(element).find(".special-price").text().trim();
+      const link = $(element).find("a").attr("href");
+
+      products.push({ name, price, link });
     });
-
-    await page.waitForSelector(".products-grid", { timeout: 60000 });
-
-    const products = await page.evaluate(() => {
-      const items = [];
-      const productElements = document.querySelectorAll(".item");
-
-      productElements.forEach((element) => {
-        const name = element.querySelector(".product-name")?.innerText || "";
-        const price = element.querySelector(".price")?.innerText || "";
-        const link = element.querySelector("a")?.href || "";
-
-        items.push({
-          name,
-          price,
-          link,
-        });
-      });
-
-      return items;
-    });
-
-    await browser.close();
 
     const validProducts = products.filter(
       (product) =>
