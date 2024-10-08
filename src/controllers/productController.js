@@ -6,13 +6,24 @@ const {
 const convertMDLToEUR = require("./exchangeEUR");
 const { fetchHtmlUsingTcpSocket } = require("../services/httpService");
 
+const scrapeProductDetails = async (productLink, hostname) => {
+  try {
+    const html = await fetchHtmlUsingTcpSocket(hostname, productLink);
+    const $ = cheerio.load(html);
+    const sku = $(".sku").text().trim();
+    return sku || "No SKU found";
+  } catch (error) {
+    console.error(`Error fetching SKU for ${productLink}:`, error);
+    return "Error fetching SKU";
+  }
+};
+
 exports.scrapeTopShop = async (req, res) => {
   try {
     const hostname = "www.top-shop.md";
     const path = "/oferte-speciale";
 
     const html = await fetchHtmlUsingTcpSocket(hostname, path);
-
     const $ = cheerio.load(html);
     const products = [];
 
@@ -30,17 +41,18 @@ exports.scrapeTopShop = async (req, res) => {
       }
     });
 
-    const productsWithEURPrices = await Promise.all(
+    const productsWithDetails = await Promise.all(
       products.map(async (product) => {
         const priceInEUR = await convertMDLToEUR(product.price);
-        return { ...product, priceInEUR };
+        const sku = await scrapeProductDetails(product.link, hostname);
+        return { ...product, priceInEUR, sku };
       })
     );
 
     const minPrice = 50;
     const maxPrice = 200;
 
-    const filteredProducts = productsWithEURPrices.filter(
+    const filteredProducts = productsWithDetails.filter(
       (product) =>
         product.priceInEUR >= minPrice && product.priceInEUR <= maxPrice
     );
