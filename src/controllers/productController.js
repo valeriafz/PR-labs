@@ -3,6 +3,7 @@ const {
   validateProductName,
   validateProductPrice,
 } = require("../utils/validators");
+const { serializeJSON, serializeXML } = require("../utils/serializers");
 const convertMDLToEUR = require("./exchangeEUR");
 const { fetchHtmlUsingTcpSocket } = require("../services/httpService");
 
@@ -67,6 +68,9 @@ exports.scrapeTopShop = async (req, res) => {
       filteredProducts,
       totalPrice: parseFloat(totalPrice.toFixed(2)),
     };
+
+    serializeJSON(result);
+    serializeXML(result);
 
     res.json(result);
   } catch (error) {
