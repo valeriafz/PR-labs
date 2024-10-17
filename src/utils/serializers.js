@@ -1,5 +1,5 @@
 const serializeXML = (data) => {
-  console.log("Serialized to XML format:");
+  // console.log("Serialized to XML format:");
 
   let xml = `<result>\n`;
   xml += `  <timestamp>${data.timestamp}</timestamp>\n`;
@@ -19,30 +19,28 @@ const serializeXML = (data) => {
   xml += `  </filteredProducts>\n`;
   xml += `</result>\n`;
 
-  console.log(xml);
+  // console.log(xml);
   return xml;
 };
 
 const serializeJSON = (data) => {
-  console.log("Serialized to JSON format:");
-  let json = `{\n`;
-  json += `  "timestamp": "${data.timestamp}",\n`;
-  json += `  "totalPrice": ${data.totalPrice},\n`;
-  json += `  "filteredProducts": [\n`;
+  // console.log("Serialized to JSON format:");
 
-  data.filteredProducts.forEach((product) => {
-    json += `    {\n`;
-    json += `      "name": "${product.name}",\n`;
-    json += `      "price": "${product.price}",\n`;
-    json += `      "link": "${product.link}",\n`;
-    json += `      "priceInEUR": ${product.priceInEUR},\n`;
-    json += `      "sku": "${product.sku}"\n`;
-    json += `    },\n`;
-  });
+  const jsonObject = {
+    timestamp: data.timestamp,
+    totalPrice: data.totalPrice,
+    filteredProducts: data.filteredProducts.map((product) => ({
+      name: product.name,
+      price: product.price,
+      link: product.link,
+      priceInEUR: product.priceInEUR,
+      sku: product.sku,
+    })),
+  };
 
-  json = json.slice(0, -2) + `\n  ]\n}`;
+  const json = JSON.stringify(jsonObject, null, 2);
 
-  console.log(json);
+  // console.log(json);
   return json;
 };
 
