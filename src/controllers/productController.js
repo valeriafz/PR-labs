@@ -6,6 +6,7 @@ const {
 const { serializeJSON, serializeXML } = require("../utils/serializers");
 const convertMDLToEUR = require("./exchangeEUR");
 const { fetchHtmlUsingTcpSocket } = require("../services/httpService");
+const { sendData } = require("../services/dataSender");
 
 const scrapeProductDetails = async (productLink, hostname) => {
   try {
@@ -69,10 +70,23 @@ exports.scrapeTopShop = async (req, res) => {
       totalPrice: parseFloat(totalPrice.toFixed(2)),
     };
 
-    serializeJSON(result);
-    serializeXML(result);
+    const jsonData = serializeJSON(result);
+    const xmlData = serializeXML(result);
 
-    res.json(result);
+    const jsonSendResult = await sendData(jsonData, "application/json");
+    const xmlSendResult = await sendData(xmlData, "application/xml");
+
+    if (jsonSendResult.success && xmlSendResult.success) {
+      res.json({
+        result,
+      });
+    } else {
+      res.status(500).json({
+        message: "Error sending data",
+        jsonError: jsonSendResult.error,
+        xmlError: xmlSendResult.error,
+      });
+    }
   } catch (error) {
     console.error("Error occurred while scraping:", error);
     res.status(500).json({ message: "Error occurred while scraping", error });
