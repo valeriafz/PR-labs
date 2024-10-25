@@ -19,7 +19,7 @@ const serializeXML = (data) => {
   xml += `  </filteredProducts>\n`;
   xml += `</result>\n`;
 
-  // console.log(xml);
+  console.log(xml);
   return xml;
 };
 
