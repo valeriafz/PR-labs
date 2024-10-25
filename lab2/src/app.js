@@ -7,16 +7,14 @@ const app = express();
 app.use(express.json());
 
 db.getConnection()
-  .then((connection) => {
-    console.log("Database connection successful!");
-    connection.release();
-  })
-  .catch((error) => {
-    console.error("Database connection failed:", error);
-    process.exit(1);
-  });
+  .then(() => console.log("Database connected successfully!"))
+  .catch((error) => console.error("Database connection failed:", error));
+
+app.locals.db = db;
 
 app.use("/api", routes);
 
 const PORT = 3000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, "0.0.0.0", () =>
+  console.log(`Server running on port ${PORT}`)
+);
