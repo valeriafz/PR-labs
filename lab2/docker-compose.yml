@@ -1,0 +1,14 @@
+services:
+  my_mysql:
+    image: mysql:latest
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: product_db
+    networks:
+      - lab2
+    ports:
+      - "3307:3306"
+
+networks:
+  lab2:
+    driver: bridge
