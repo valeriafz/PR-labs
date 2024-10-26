@@ -1,7 +1,7 @@
 const mysql = require("mysql2/promise");
 
 const db = mysql.createPool({
-  host: "lab2-my_mysql-1",
+  host: "my_mysql",
   user: "root",
   password: "rootpass",
   database: "product_db",
