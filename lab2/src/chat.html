@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebSocket Chat</title>
+  </head>
+  <body>
+    <h1>WebSocket Chat Room</h1>
+    <div>
+      <input id="username" type="text" placeholder="Enter your username" />
+      <button id="join">Join Room</button>
+    </div>
+    <div>
+      <input
+        id="message"
+        type="text"
+        placeholder="Type a message..."
+        disabled
+      />
+      <button id="send" disabled>Send Message</button>
+      <button id="leave" disabled>Leave Room</button>
+    </div>
+    <div
+      id="chatbox"
+      style="border: 1px solid #000; height: 200px; overflow-y: scroll"
+    ></div>
+
+    <script>
+      const ws = new WebSocket("ws://localhost:3001");
+      const chatbox = document.getElementById("chatbox");
+      const usernameInput = document.getElementById("username");
+      const messageInput = document.getElementById("message");
+      const sendButton = document.getElementById("send");
+      const joinButton = document.getElementById("join");
+      const leaveButton = document.getElementById("leave");
+
+      let username = "";
+
+      ws.onopen = () => {
+        console.log("Connected to WebSocket");
+      };
+
+      ws.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        chatbox.innerHTML += `<div>${data.username}: ${data.message}</div>`;
+        chatbox.scrollTop = chatbox.scrollHeight;
+      };
+
+      joinButton.onclick = () => {
+        username = usernameInput.value;
+        if (username) {
+          ws.send(JSON.stringify({ command: "join_room", username }));
+          messageInput.disabled = false;
+          sendButton.disabled = false;
+          leaveButton.disabled = false;
+          joinButton.disabled = true;
+        }
+      };
+
+      sendButton.onclick = () => {
+        const message = messageInput.value;
+        if (message) {
+          ws.send(JSON.stringify({ command: "send_msg", username, message }));
+          messageInput.value = "";
+        }
+      };
+
+      leaveButton.onclick = () => {
+        ws.send(JSON.stringify({ command: "leave_room", username }));
+        messageInput.disabled = true;
+        sendButton.disabled = true;
+        leaveButton.disabled = true;
+        joinButton.disabled = false;
+        chatbox.innerHTML += `<div>${username} has left the chat.</div>`;
+      };
+    </script>
+  </body>
+</html>
