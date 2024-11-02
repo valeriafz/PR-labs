@@ -14,7 +14,7 @@ const createProduct = async (req, res) => {
 };
 
 const getProducts = async (req, res) => {
-  const limit = parseInt(req.query.limit) || 10;
+  const limit = parseInt(req.query.limit) || 5;
   const offset = parseInt(req.query.offset) || 0;
   try {
     const [products] = await db.query(
