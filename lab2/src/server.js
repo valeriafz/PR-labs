@@ -3,6 +3,7 @@ const { Worker } = require("worker_threads");
 const path = require("path");
 const fs = require("fs").promises;
 const { Mutex } = require("async-mutex");
+const net = require("net");
 
 const app = express();
 app.use(express.json());
@@ -25,9 +26,7 @@ const initializeFiles = async () => {
   try {
     await fs.mkdir(path.dirname(COMMAND_FILE_PATH), { recursive: true });
     await fs.mkdir(path.dirname(SHARED_FILE_PATH), { recursive: true });
-
     await fs.writeFile(SHARED_FILE_PATH, "");
-
     console.log("Files initialized successfully");
   } catch (error) {
     console.error("Error initializing files:", error);
@@ -129,12 +128,32 @@ const startServer = async () => {
   try {
     await initializeFiles();
 
-    setInterval(processCommandFile, CHECK_INTERVAL);
+    const tcpServer = net.createServer((socket) => {
+      console.log("Client connected");
 
-    app.listen(PORT, () => {
-      console.log(`TCP Server running on port ${PORT}`);
-      console.log(`Monitoring ${COMMAND_FILE_PATH} for commands`);
+      socket.on("data", async (data) => {
+        try {
+          const command = data.toString().trim();
+          const result = await handleCommand(command);
+          socket.write(JSON.stringify(result));
+        } catch (error) {
+          console.error("Error processing command:", error);
+          socket.write(
+            JSON.stringify({ success: false, error: error.message })
+          );
+        }
+      });
+
+      socket.on("end", () => {
+        console.log("Client disconnected");
+      });
     });
+
+    tcpServer.listen(PORT, () => {
+      console.log(`TCP server running on port ${PORT}`);
+    });
+
+    setInterval(processCommandFile, CHECK_INTERVAL);
   } catch (error) {
     console.error("Failed to start server:", error);
     process.exit(1);

@@ -2,7 +2,7 @@ const { parentPort, workerData } = require("worker_threads");
 const fs = require("fs").promises;
 
 const performOperation = async () => {
-  const sleepTime = Math.floor(Math.random() * 7000 + 1000);
+  const sleepTime = Math.floor(Math.random() * 7000);
   console.log(`Worker sleeping for ${sleepTime}ms`);
   await new Promise((resolve) => setTimeout(resolve, sleepTime));
 
