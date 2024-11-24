@@ -7,6 +7,7 @@ const { serializeJSON, serializeXML } = require("../utils/serializers");
 const convertMDLToEUR = require("./exchangeEUR");
 const { fetchHtmlUsingTcpSocket } = require("../services/httpService");
 const { sendData } = require("../services/dataSender");
+const { sendToQueue } = require("../services/messagePublisher");
 
 const scrapeProductDetails = async (productLink, hostname) => {
   try {
@@ -50,6 +51,18 @@ exports.scrapeTopShop = async (req, res) => {
         return { ...product, priceInEUR, sku };
       })
     );
+
+    const testData = { name: "Test Product", price: "100", link: "test-link" };
+    sendToQueue("productQueue", testData);
+
+    // Send all products to RabbitMQ
+    try {
+      productsWithDetails.forEach((product) =>
+        sendToQueue("productQueue", product)
+      );
+    } catch (error) {
+      console.error("Error sending to RabbitMQ:", error);
+    }
 
     const minPrice = 50;
     const maxPrice = 200;
