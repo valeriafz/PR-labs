@@ -1,8 +1,38 @@
 version: "3.8"
+
 services:
   rabbitmq:
-    image: rabbitmq:3-management
-    container_name: rabbitmq
+    image: rabbitmq:management
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    user: "rabbitmq"
+    command: sh -c "chown rabbitmq:rabbitmq /var/lib/rabbitmq/.erlang.cookie && chmod 400 /var/lib/rabbitmq/.erlang.cookie && rabbitmq-server"
     ports:
-      - "5672:5672" # AMQP protocol port
-      - "15672:15672" # Management UI
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      RABBITMQ_DEFAULT_USER: user
+      RABBITMQ_DEFAULT_PASS: password
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+
+  manager:
+    build:
+      context: ./manager
+    ports:
+      - "4000:4000"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    environment:
+      - RABBITMQ_URI=amqp://user:password@rabbitmq:5672
+    volumes:
+      - ./manager:/index
+    command: ["sh", "-c", "node index.js"]
+
+volumes:
+  rabbitmq_data:
