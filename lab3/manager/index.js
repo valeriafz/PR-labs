@@ -13,6 +13,8 @@ amqp.connect("amqp://user:password@rabbitmq:5672", (error0, connection) => {
       return;
     }
 
+    console.log("Successfully connected to RabbitMQ!");
+
     const queue = "productQueue";
 
     channel.assertQueue(queue, { durable: false });
@@ -23,10 +25,19 @@ amqp.connect("amqp://user:password@rabbitmq:5672", (error0, connection) => {
         const product = JSON.parse(msg.content.toString());
         console.log("Received product data:", product);
 
+        // Ensure the product data contains the expected fields
+        const { name, price, link, priceInEUR, sku } = product;
+
         try {
           const response = await axios.post(
             "http://localhost:3000/api/products",
-            product
+            {
+              name,
+              price,
+              link,
+              priceInEUR,
+              sku,
+            }
           );
           console.log("Successfully sent product to LAB2:", response.data);
         } catch (error) {
