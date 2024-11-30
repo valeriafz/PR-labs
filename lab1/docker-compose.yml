@@ -1,8 +1,24 @@
+# version: "3.8"
+# services:
+#   lab1-http-server:
+#     build:
+#       context: .
+#     ports:
+#       - "8000:8000"
+#     environment:
+#       - PORT=8000
 version: "3.8"
 services:
   lab1-http-server:
-    image: nicug/server-pr-lab1:latest
+    build:
+      context: .
     ports:
       - "8000:8000"
     environment:
       - PORT=8000
+    networks:
+      - lab2_lab2
+
+networks:
+  lab2_lab2:
+    external: true

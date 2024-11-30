@@ -1,7 +1,7 @@
 const amqp = require("amqplib/callback_api");
 
 const sendToQueue = (queueName, data) => {
-  amqp.connect("amqp://user:password@rabbitmq:5672", (error0, connection) => {
+  amqp.connect("amqp://user:password@172.19.0.2:5672", (error0, connection) => {
     if (error0) {
       console.error("RabbitMQ Connection Error:", error0);
       return;
