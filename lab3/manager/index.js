@@ -1,54 +1,26 @@
-const amqp = require("amqplib/callback_api");
-const axios = require("axios");
+// command to make copies docker-compose up --scale manager=3
 
-amqp.connect("amqp://user:password@rabbitmq:5672", (error0, connection) => {
-  if (error0) {
-    console.error("RabbitMQ Connection Error:", error0);
-    return;
-  }
+const express = require("express");
+const LeaderElection = require("./leaderElection");
 
-  connection.createChannel((error1, channel) => {
-    if (error1) {
-      console.error("RabbitMQ Channel Error:", error1);
-      return;
-    }
+const app = express();
+app.use(express.json());
 
-    console.log("Successfully connected to RabbitMQ!");
+const leaderElection = new LeaderElection();
 
-    const queue = "productQueue";
+app.post("/update-leader", (req, res) => {
+  const { serverId, hostname } = req.body;
+  console.log(
+    `Received leadership update from ${hostname} with server ID ${serverId}`
+  );
 
-    channel.assertQueue(queue, { durable: false });
-    console.log("Waiting for messages in", queue);
+  res.status(200).json({ message: "Leader update received" });
+});
 
-    channel.consume(queue, async (msg) => {
-      if (msg) {
-        const product = JSON.parse(msg.content.toString());
-        console.log("Received product data:", product);
+const PORT = 4000;
 
-        const { name, price, link, priceInEUR, sku } = product;
+const server = app.listen(PORT, () => {
+  console.log(`Manager server running on port ${PORT}`);
 
-        axios
-          .post("http://lab2-my_node_app-1:3000/api/products", {
-            ...product,
-            price: product.price.replace(",", "."),
-          })
-          .then((response) => {
-            console.log("Product successfully sent to LAB2:", response.data);
-          })
-          .catch((error) => {
-            console.error("Axios error:", error.message);
-            if (error.response) {
-              console.error("Error response data:", error.response.data);
-              console.error("Status:", error.response.status);
-            }
-            if (error.request) {
-              console.error("Request data:", error.request);
-            }
-          });
-
-        // Acknowledge the message after it has been processed
-        channel.ack(msg);
-      }
-    });
-  });
+  leaderElection.start(app);
 });
