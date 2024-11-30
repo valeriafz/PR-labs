@@ -25,24 +25,26 @@ amqp.connect("amqp://user:password@rabbitmq:5672", (error0, connection) => {
         const product = JSON.parse(msg.content.toString());
         console.log("Received product data:", product);
 
-        // Ensure the product data contains the expected fields
         const { name, price, link, priceInEUR, sku } = product;
 
-        try {
-          const response = await axios.post(
-            "http://localhost:3000/api/products",
-            {
-              name,
-              price,
-              link,
-              priceInEUR,
-              sku,
+        axios
+          .post("http://lab2-my_node_app-1:3000/api/products", {
+            ...product,
+            price: product.price.replace(",", "."),
+          })
+          .then((response) => {
+            console.log("Product successfully sent to LAB2:", response.data);
+          })
+          .catch((error) => {
+            console.error("Axios error:", error.message);
+            if (error.response) {
+              console.error("Error response data:", error.response.data);
+              console.error("Status:", error.response.status);
             }
-          );
-          console.log("Successfully sent product to LAB2:", response.data);
-        } catch (error) {
-          console.error("Error sending product to LAB2:", error);
-        }
+            if (error.request) {
+              console.error("Request data:", error.request);
+            }
+          });
 
         // Acknowledge the message after it has been processed
         channel.ack(msg);
