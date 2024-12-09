@@ -5,15 +5,16 @@ const amqp = require("amqplib/callback_api");
 
 class LeaderElection {
   constructor(port = 41234, multicastAddress = "230.185.192.21") {
-    this.port = port;
-    this.multicastAddress = multicastAddress;
+    //private multicast usage
+    this.port = port; // UDP port to communicate on
+    this.multicastAddress = multicastAddress; // Special IP for group communication
     this.serverId = this.generateServerId();
     this.isLeader = false;
-    this.leaderServerId = null;
+    this.leaderServerId = null; // ID of the current leader
     this.udpSocket = dgram.createSocket("udp4");
-    this.electionInProgress = false;
+    this.electionInProgress = false; // Flag to track if an election is happening
     this.electionTimeout = null;
-    this.activeServers = new Set();
+    this.activeServers = new Set(); // Track active servers in the network
   }
 
   generateServerId() {
@@ -24,7 +25,8 @@ class LeaderElection {
 
   initializeUDPServer() {
     this.udpSocket.bind(this.port, () => {
-      this.udpSocket.addMembership(this.multicastAddress);
+      //Binds the server to the specified port
+      this.udpSocket.addMembership(this.multicastAddress); // Join multicast group.
       console.log(`UDP Server bound on port ${this.port}`);
 
       // periodic track of active servers
@@ -33,9 +35,10 @@ class LeaderElection {
       // short delay to allow other servers to start before election
       setTimeout(() => this.startElection(), 3000);
     });
-
+    //handles incoming UDP messages as they arrive, without blocking other parts of the program.
     this.udpSocket.on("message", (msg, rinfo) => {
-      this.handleUDPMessage(msg.toString(), rinfo);
+      //rinfo= source of the message.
+      this.handleUDPMessage(msg.toString(), rinfo); // Handle incoming messages.
     });
 
     this.udpSocket.on("error", (err) => {
@@ -43,6 +46,7 @@ class LeaderElection {
     });
   }
 
+  // Every 5 seconds, the server announces "I'm alive!" to other servers.
   broadcastHeartbeat() {
     const heartbeatMsg = JSON.stringify({
       type: "heartbeat",
@@ -69,7 +73,7 @@ class LeaderElection {
 
     // timeout for election completion
     this.electionTimeout = setTimeout(() => {
-      this.finalizeElection();
+      this.finalizeElection(); // Declare self as leader if no response.
     }, 5000);
   }
 
@@ -79,9 +83,11 @@ class LeaderElection {
 
       switch (msg.type) {
         case "heartbeat":
+          // tracks active servers
           this.activeServers.add(msg.serverId);
           break;
         case "election":
+          // voting process
           this.handleElectionMessage(msg);
           break;
         case "leader":
@@ -95,7 +101,7 @@ class LeaderElection {
 
   handleElectionMessage(msg) {
     if (msg.serverId > this.serverId) {
-      // Another server has higher priority, stop election
+      // Another server has higher priority/ ID, stop competing
       this.electionInProgress = false;
       clearTimeout(this.electionTimeout);
     } else if (msg.serverId < this.serverId) {
@@ -127,18 +133,24 @@ class LeaderElection {
         serverId: this.serverId,
         timestamp: Date.now(),
       });
+
       this.broadcastMessage(leaderMsg);
+
       this.isLeader = true;
       this.leaderServerId = this.serverId;
     }
   }
 
   broadcastMessage(message) {
+    // UDP sockets send raw binary data, so the message must be encoded into a binary format (Buffer)
     const buffer = Buffer.from(message);
+
+    console.log(`Broadcasting message: ${message}`);
+
     this.udpSocket.send(
       buffer,
-      0,
-      buffer.length,
+      0, // pffeset to start sending from the beggining
+      buffer.length, //nr of bytes
       this.port,
       this.multicastAddress,
       (err) => {
@@ -161,18 +173,12 @@ class LeaderElection {
         }
 
         console.log("Successfully connected to RabbitMQ!");
-        const queue = "productQueue";
-        channel.assertQueue(queue, { durable: false });
-        console.log("Waiting for messages in", queue);
 
-        app.get("/leader-status", (req, res) => {
-          res.json({
-            isLeader: this.isLeader,
-            serverId: this.serverId,
-            leaderServerId: this.leaderServerId,
-            activeServers: Array.from(this.activeServers),
-          });
-        });
+        const queue = "productQueue";
+
+        channel.assertQueue(queue, { durable: false }); //ensures the queue exists, durability is temporary so speedy
+
+        console.log("Waiting for messages in", queue);
 
         // Leader-only message processing
         channel.consume(queue, async (msg) => {
@@ -193,7 +199,7 @@ class LeaderElection {
               console.error("Axios error:", error.message);
             }
 
-            // Acknowledge the message
+            // Acknowledge the message, consumer confirms processed message
             channel.ack(msg);
           } else if (msg) {
             // Non-leader servers just acknowledge the message

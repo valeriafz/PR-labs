@@ -20,7 +20,7 @@ services:
       start_period: 30s
       timeout: 10s
     networks:
-      - lab2_lab2 # Connects rabbitmq to the lab2 network
+      - lab2_lab2
 
   manager:
     build:
@@ -37,11 +37,11 @@ services:
       - ./manager:/index
     command: ["sh", "-c", "node index.js"]
     networks:
-      - lab2_lab2 # Connects manager to the lab2 network
+      - lab2_lab2
 
 volumes:
   rabbitmq_data:
 
 networks:
-  lab2_lab2: # Make sure this network matches the one in lab2
+  lab2_lab2:
     external: true

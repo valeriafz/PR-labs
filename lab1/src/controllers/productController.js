@@ -52,10 +52,6 @@ exports.scrapeTopShop = async (req, res) => {
       })
     );
 
-    const testData = { name: "Test Product", price: "100", link: "test-link" };
-    sendToQueue("productQueue", testData);
-
-    // Send all products to RabbitMQ
     try {
       productsWithDetails.forEach((product) =>
         sendToQueue("productQueue", product)
