@@ -39,20 +39,6 @@ services:
     networks:
       - lab2_lab2
 
-  smtp-service:
-    build:
-      context: ./smtp
-      dockerfile: Dockerfile
-    container_name: smtp-email-service
-    ports:
-      - "5000:5000"
-    environment:
-      - EMAIL_USER=${EMAIL_USER}
-      - EMAIL_PASS=${EMAIL_PASS}
-      - SMTP_HOST=smtp.gmail.com
-      - SMTP_PORT=587
-    restart: unless-stopped
-
 volumes:
   rabbitmq_data:
 
